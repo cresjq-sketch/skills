@@ -8,6 +8,7 @@ import {
 import { loadConfig, updateConfig } from "./configStore";
 import { validateLocalSkillDirectory } from "./importLocal";
 import { scanSkills } from "./skillScanner";
+import { deriveSkillSummary } from "./skillSummary";
 import type { SkillConfigPatch, SkillViewRecord } from "../shared/types";
 
 export interface ServerOptions {
@@ -97,7 +98,8 @@ async function readSkills(codexSkillsRoot: string, pluginCacheRoot: string, conf
   });
   const skills: SkillViewRecord[] = scanResult.skills.map((skill) => ({
     ...skill,
-    override: config.overrides[skill.id] ?? {}
+    override: config.overrides[skill.id] ?? {},
+    summary: deriveSkillSummary(skill, config.overrides[skill.id])
   }));
   return { ...scanResult, skills, config };
 }

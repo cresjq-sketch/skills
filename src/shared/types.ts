@@ -19,6 +19,7 @@ export interface SkillRecord {
 
 export interface SkillViewRecord extends SkillRecord {
   override: SkillOverride;
+  summary: SkillSummary;
 }
 
 export interface SkillScanError {
@@ -38,9 +39,18 @@ export interface ScanSkillsOptions {
 }
 
 export interface SkillOverride {
+  displayName?: string;
   note?: string;
   category?: string;
+  summary?: string;
   hidden?: boolean;
+}
+
+export interface SkillSummary {
+  displayName: string;
+  category: string;
+  summary: string;
+  triggerHints: string[];
 }
 
 export interface CustomSkillEntry {
