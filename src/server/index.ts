@@ -6,6 +6,7 @@ import {
   DEFAULT_PLUGIN_CACHE_ROOT
 } from "./paths";
 import { loadConfig, updateConfig } from "./configStore";
+import { installGitHubSkill, previewGitHubSkills, type GitHubImportOptions } from "./githubImport";
 import { validateLocalSkillDirectory } from "./importLocal";
 import { scanSkills } from "./skillScanner";
 import { deriveSkillSummary } from "./skillSummary";
@@ -16,6 +17,7 @@ export interface ServerOptions {
   pluginCacheRoot?: string;
   configPath?: string;
   useViteMiddleware?: boolean;
+  githubImportOptions?: GitHubImportOptions;
 }
 
 export function createApp(options: ServerOptions = {}) {
@@ -25,6 +27,7 @@ export function createApp(options: ServerOptions = {}) {
   const codexSkillsRoot = options.codexSkillsRoot ?? DEFAULT_CODEX_SKILLS_ROOT;
   const pluginCacheRoot = options.pluginCacheRoot ?? DEFAULT_PLUGIN_CACHE_ROOT;
   const configPath = options.configPath ?? DEFAULT_CONFIG_PATH;
+  const githubImportOptions = options.githubImportOptions ?? {};
 
   app.get("/api/config", async (_request, response, next) => {
     try {
@@ -76,6 +79,22 @@ export function createApp(options: ServerOptions = {}) {
       const current = await loadConfig(configPath);
       const extraScanPaths = Array.from(new Set([...current.extraScanPaths, validation.path]));
       response.json(await updateConfig({ extraScanPaths }, configPath));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/import/github/preview", async (request, response, next) => {
+    try {
+      response.json(await previewGitHubSkills(String(request.body?.input ?? ""), githubImportOptions));
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/import/github/install", async (request, response, next) => {
+    try {
+      response.json(await installGitHubSkill(request.body, githubImportOptions));
     } catch (error) {
       next(error);
     }

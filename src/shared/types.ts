@@ -82,3 +82,39 @@ export interface SkillsApiResponse {
   errors: SkillScanError[];
   config: SkillConfig;
 }
+
+export interface GitHubRepoInput {
+  owner: string;
+  repo: string;
+  branch?: string;
+  skillPath?: string;
+  cloneUrl: string;
+  label: string;
+}
+
+export interface GitHubSkillCandidate {
+  id: string;
+  name: string;
+  description: string;
+  relativePath: string;
+}
+
+export interface GitHubPreviewResponse {
+  repository: string;
+  candidates: GitHubSkillCandidate[];
+  autoInstallCandidateId?: string;
+  clonePath: string;
+  cleanupWarning?: string;
+}
+
+export interface GitHubInstallRequest {
+  input?: string;
+  clonePath?: string;
+  candidateId?: string;
+}
+
+export interface GitHubInstallResponse {
+  installedPath: string;
+  installedSkillName: string;
+  cleanupWarning?: string;
+}
