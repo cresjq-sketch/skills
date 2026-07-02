@@ -50,3 +50,15 @@ export interface SkillConfig {
   overrides: Record<string, SkillOverride>;
   customEntries: CustomSkillEntry[];
 }
+
+export interface SkillConfigPatch {
+  extraScanPaths?: string[];
+  overrides?: Record<string, SkillOverride>;
+  customEntries?: CustomSkillEntry[];
+}
+
+export interface LocalImportValidation {
+  valid: boolean;
+  path: string;
+  message?: string;
+}
