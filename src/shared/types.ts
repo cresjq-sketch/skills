@@ -17,6 +17,10 @@ export interface SkillRecord {
   metadata: Record<string, string>;
 }
 
+export interface SkillViewRecord extends SkillRecord {
+  override: SkillOverride;
+}
+
 export interface SkillScanError {
   path: string;
   message: string;
@@ -61,4 +65,10 @@ export interface LocalImportValidation {
   valid: boolean;
   path: string;
   message?: string;
+}
+
+export interface SkillsApiResponse {
+  skills: SkillViewRecord[];
+  errors: SkillScanError[];
+  config: SkillConfig;
 }
