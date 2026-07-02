@@ -1,6 +1,6 @@
 # Codex Skills Dashboard
 
-本地 Codex 技能管理页，用来查看这台 Mac 上已经安装的 Codex 技能，并保存安全的手动备注。
+本地 Codex 技能管理页，用来查阅本机 Codex skills，查看已有技能说明，并添加新的本地 skill 扫描来源。
 
 ## 启动
 
@@ -56,4 +56,3 @@ data/skills-config.json
 npm test
 npm run build
 ```
-
