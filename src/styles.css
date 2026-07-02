@@ -1,0 +1,406 @@
+:root {
+  color: #1d252c;
+  background: #f4f5f2;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  align-items: center;
+  background: #263238;
+  border: 1px solid #263238;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 8px;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+button:hover {
+  background: #1a2327;
+}
+
+input,
+select {
+  background: #fff;
+  border: 1px solid #cfd6d1;
+  border-radius: 6px;
+  color: #1d252c;
+  min-height: 36px;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 680px;
+}
+
+.toolbar {
+  align-items: center;
+  background: #ffffff;
+  border-bottom: 1px solid #d9ded9;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  min-height: 76px;
+  padding: 14px 18px;
+}
+
+.toolbar h1,
+.toolbar p,
+.detail-header h2,
+.detail-header p,
+.management-panel h2,
+.management-panel p {
+  margin: 0;
+}
+
+.toolbar h1 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.toolbar p {
+  color: #5d6864;
+  font-size: 14px;
+}
+
+.toolbar-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.toolbar-actions span {
+  background: #edf1ee;
+  border-radius: 999px;
+  color: #40504a;
+  font-size: 13px;
+  padding: 5px 9px;
+}
+
+.workspace {
+  display: grid;
+  flex: 1;
+  grid-template-columns: 320px minmax(420px, 1fr) 320px;
+  min-height: 0;
+}
+
+.skill-sidebar,
+.management-panel {
+  background: #fbfbf8;
+  border-right: 1px solid #d9ded9;
+  min-width: 0;
+  overflow: auto;
+  padding: 14px;
+}
+
+.management-panel {
+  border-left: 1px solid #d9ded9;
+  border-right: 0;
+}
+
+.search-box {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.filter-row {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-bottom: 12px;
+}
+
+.toggle {
+  background: #ffffff;
+  border-color: #cfd6d1;
+  color: #263238;
+}
+
+.toggle.active {
+  background: #e5f0eb;
+  border-color: #7a9a8a;
+}
+
+.skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skill-row {
+  align-items: stretch;
+  background: #ffffff;
+  border: 1px solid #d9ded9;
+  border-radius: 8px;
+  color: #1d252c;
+  display: grid;
+  gap: 4px;
+  justify-content: stretch;
+  min-height: 86px;
+  padding: 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.skill-row:hover,
+.skill-row.selected {
+  background: #eef5f2;
+  border-color: #7a9a8a;
+}
+
+.skill-title {
+  font-size: 15px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.skill-description,
+.skill-meta {
+  color: #5d6864;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.skill-detail {
+  min-width: 0;
+  overflow: auto;
+  padding: 18px;
+}
+
+.detail-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.detail-header h2 {
+  font-size: 24px;
+  overflow-wrap: anywhere;
+}
+
+.detail-header p {
+  color: #5d6864;
+}
+
+.source-pill {
+  border-radius: 999px;
+  color: #fff;
+  flex: 0 0 auto;
+  font-size: 13px;
+  padding: 5px 10px;
+}
+
+.source-pill.codex {
+  background: #395b50;
+}
+
+.source-pill.plugin {
+  background: #7c4b2a;
+}
+
+.source-pill.custom {
+  background: #5d557f;
+}
+
+.meta-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr;
+  margin: 0 0 16px;
+}
+
+.meta-grid div,
+.markdown-panel,
+.management-panel section {
+  background: #ffffff;
+  border: 1px solid #d9ded9;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.meta-grid dt {
+  color: #5d6864;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.meta-grid dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.edit-grid {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(140px, 0.7fr) minmax(180px, 1fr) auto auto;
+  margin-bottom: 16px;
+}
+
+.edit-grid label,
+.management-panel label {
+  color: #40504a;
+  display: grid;
+  font-size: 13px;
+  gap: 5px;
+}
+
+.checkbox-label {
+  align-items: center;
+  display: flex !important;
+  gap: 8px !important;
+  min-height: 36px;
+}
+
+.checkbox-label input {
+  min-height: auto;
+  width: auto;
+}
+
+.markdown-panel h3 {
+  font-size: 15px;
+  margin: 0 0 10px;
+}
+
+.markdown-panel pre {
+  background: #172026;
+  border-radius: 6px;
+  color: #f5f7f0;
+  font-size: 13px;
+  margin: 0;
+  max-height: 58vh;
+  overflow: auto;
+  padding: 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.management-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.management-panel section {
+  display: grid;
+  gap: 10px;
+}
+
+.management-panel h2 {
+  font-size: 16px;
+}
+
+.management-panel p,
+.path-list,
+.error-list {
+  color: #5d6864;
+  font-size: 13px;
+}
+
+.path-list,
+.error-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.path-list li,
+.error-list li {
+  background: #f4f5f2;
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+  padding: 8px;
+}
+
+.error-list strong,
+.error-list span {
+  display: block;
+}
+
+.empty-state {
+  color: #5d6864;
+  padding: 48px;
+  text-align: center;
+}
+
+.sr-only {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
+@media (max-width: 1080px) {
+  .app-shell {
+    height: auto;
+  }
+
+  .workspace {
+    grid-template-columns: 280px minmax(0, 1fr);
+  }
+
+  .management-panel {
+    border-left: 0;
+    border-top: 1px solid #d9ded9;
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .toolbar,
+  .detail-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .workspace {
+    display: block;
+  }
+
+  .skill-sidebar,
+  .skill-detail,
+  .management-panel {
+    max-height: none;
+  }
+
+  .edit-grid {
+    grid-template-columns: 1fr;
+  }
+}
