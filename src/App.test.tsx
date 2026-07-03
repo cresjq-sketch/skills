@@ -18,7 +18,8 @@ const alpha = {
     displayName: "alpha",
     category: "搜索调研",
     summary: "适合收集资料、搜索网页、整理外部信息和做主题调研。",
-    triggerHints: ["需要查资料、看网页、整理外部信息时"]
+    triggerHints: ["需要查资料、看网页、整理外部信息时"],
+    boundaries: []
   }
 };
 
@@ -37,7 +38,8 @@ const beta = {
     displayName: "beta",
     category: "Research",
     summary: "适合处理插件技能。",
-    triggerHints: ["需要管理技能时"]
+    triggerHints: ["需要管理技能时"],
+    boundaries: ["不负责发布内容"]
   }
 };
 

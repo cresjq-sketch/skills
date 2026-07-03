@@ -72,12 +72,16 @@ export function deriveSkillSummary(skill: SkillRecord, override: SkillOverride =
   const rule = CATEGORY_RULES.find((candidate) =>
     candidate.keywords.some((keyword) => text.includes(keyword.toLowerCase()))
   );
+  const sourceSignals = extractSourceSignals(skill);
 
   return {
     displayName: override.displayName || skill.name,
     category: override.category || rule?.category || "通用技能",
-    summary: override.summary || rule?.summary || "查看原文了解这个技能的具体用途。",
-    triggerHints: rule?.triggerHints ?? ["不确定时可打开原文查看触发条件和使用边界"]
+    summary: override.summary || sourceSignals.summary || rule?.summary || "查看原文了解这个技能的具体用途。",
+    triggerHints: sourceSignals.triggerHints.length
+      ? sourceSignals.triggerHints
+      : rule?.triggerHints ?? ["不确定时可打开原文查看触发条件和使用边界"],
+    boundaries: sourceSignals.boundaries
   };
 }
 
@@ -86,4 +90,113 @@ function meaningfulPathText(value: string) {
     .split(/[\\/]/)
     .filter((part) => part && !["skills", "skill", "cache", "plugins", "plugin", "tmp"].includes(part.toLowerCase()))
     .join(" ");
+}
+
+function extractSourceSignals(skill: SkillRecord) {
+  const markdown = skill.markdown;
+  const lower = markdown.toLowerCase();
+  const description = skill.description || skill.metadata.description || "";
+  const triggerLine = findLine(markdown, ["must use when", "use when", "triggers"]);
+  const boundaryLine = findLine(markdown, ["not for", "do not", "don't"]);
+  const platformLabels = detectPlatforms(markdown);
+  const triggerHints = extractTriggerHints(triggerLine || (containsChinese(description) ? description : ""));
+  const boundaries = extractBoundaries(boundaryLine);
+
+  const isInternetRouter =
+    lower.includes("agent reach") ||
+    lower.includes("internet") ||
+    lower.includes("全网调研") ||
+    lower.includes("小红书") ||
+    lower.includes("reddit") ||
+    lower.includes("youtube") ||
+    platformLabels.length >= 3;
+
+  let summary = "";
+  if (isInternetRouter) {
+    const platformText = platformLabels.length ? `，覆盖 ${platformLabels.join("、")} 等渠道` : "";
+    summary = `用于从互联网和多平台获取内容${platformText}，适合搜索、调研、查找资料和读取链接。`;
+  } else if (description.length >= 80 || containsChinese(description)) {
+    summary = chineseDescriptionSummary(description);
+  }
+
+  return {
+    summary,
+    triggerHints,
+    boundaries
+  };
+}
+
+function findLine(markdown: string, needles: string[]) {
+  return markdown
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find((line) => needles.some((needle) => line.toLowerCase().includes(needle)));
+}
+
+function detectPlatforms(text: string) {
+  const platforms = [
+    ["GitHub", /github/i],
+    ["小红书", /小红书|xiaohongshu|xhs/i],
+    ["Reddit", /reddit/i],
+    ["YouTube", /youtube|yt/i],
+    ["B站", /b站|bilibili/i],
+    ["Twitter/X", /twitter|推特|x\.com/i],
+    ["网页", /web|网页|internet|互联网/i]
+  ] as const;
+
+  return platforms.filter(([, pattern]) => pattern.test(text)).map(([label]) => label);
+}
+
+function extractTriggerHints(text: string) {
+  if (!text) {
+    return [];
+  }
+  const hints: string[] = [];
+  const lower = text.toLowerCase();
+  if (/调研|research|搜索|search|查|找|look up/.test(lower)) {
+    hints.push("当用户要求搜索、调研、查找信息或了解网上内容时");
+  }
+  if (/url|链接|github|小红书|reddit|youtube|bilibili|twitter|x\.com/.test(lower)) {
+    hints.push("当用户提供网页链接、GitHub、社交平台、视频或播客地址时");
+  }
+  if (/platform|渠道|平台/.test(lower)) {
+    hints.push("当任务需要跨平台获取资料或选择合适渠道时");
+  }
+  return hints.length ? hints : [cleanSentence(text)];
+}
+
+function extractBoundaries(line: string | undefined) {
+  if (!line) {
+    return [];
+  }
+  const cleaned = cleanSentence(line.replace(/^[-*\s]*/, "").replace(/^not for\s*:\s*/i, ""));
+  if (!cleaned) {
+    return [];
+  }
+  const boundaries = [cleaned];
+  if (/发帖|评论|点赞|publish|comment|like/i.test(cleaned)) {
+    boundaries.unshift("只负责获取和整理内容，不负责发帖、评论、点赞等写操作。");
+  }
+  return Array.from(new Set(boundaries));
+}
+
+function chineseDescriptionSummary(description: string) {
+  const cleaned = cleanSentence(description);
+  if (/must use when/i.test(cleaned)) {
+    return "用于处理该技能说明中指定的触发场景，可查看下方触发条件确认具体边界。";
+  }
+  return cleaned.length > 90 ? `${cleaned.slice(0, 88)}...` : cleaned;
+}
+
+function cleanSentence(value: string) {
+  return value
+    .replace(/^description:\s*/i, "")
+    .replace(/^must use when\s*/i, "")
+    .replace(/^use when\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function containsChinese(value: string) {
+  return /[\u4e00-\u9fff]/.test(value);
 }
