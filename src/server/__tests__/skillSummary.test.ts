@@ -30,11 +30,23 @@ describe("deriveSkillSummary", () => {
     expect(summary.category).toBe("学术写作");
   });
 
+  test("prioritizes academic keywords over incidental planning words", () => {
+    const summary = deriveSkillSummary(skillWith("academic-paper", "write paper plan outline citation review"));
+
+    expect(summary.category).toBe("学术写作");
+  });
+
   test("maps browser keywords to Chinese computer control category", () => {
     const summary = deriveSkillSummary(skillWith("browser", "open websites and click"));
 
     expect(summary.category).toBe("浏览器/电脑控制");
     expect(summary.triggerHints).toContain("打开网页、点击、填写或检查页面时");
+  });
+
+  test("does not treat inspect as a planning spec keyword", () => {
+    const summary = deriveSkillSummary(skillWith("control-in-app-browser", "Control the in-app Browser. Use to inspect, test, click, type, screenshot, or verify local targets."));
+
+    expect(summary.category).toBe("浏览器/电脑控制");
   });
 
   test("classifies computer-use from its own description instead of policy body", () => {
@@ -81,6 +93,21 @@ description: Create, edit, redline, and comment on .docx, Word, and Google Docs-
     expect(summary.category).toBe("文档办公");
     expect(summary.summary).toContain("Word/DOCX");
     expect(summary.summary).toContain("渲染预览");
+  });
+
+  test("classifies brainstorming as planning instead of image design", () => {
+    const markdown = `---
+name: brainstorming
+description: You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation.
+---
+# Brainstorming Ideas Into Designs
+`;
+
+    const summary = deriveSkillSummary(skillWith("brainstorming", markdown));
+
+    expect(summary.category).toBe("需求规划");
+    expect(summary.summary).toBe("用于在创建功能、组件或修改行为之前澄清用户意图、需求和设计方案。");
+    expect(summary.triggerHints).toEqual(["开始做功能、组件、创意方案或行为修改之前"]);
   });
 
   test("falls back for unknown skills", () => {

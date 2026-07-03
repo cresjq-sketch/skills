@@ -9,6 +9,12 @@ interface CategoryRule {
 
 const CATEGORY_RULES: CategoryRule[] = [
   {
+    category: "需求规划",
+    keywords: ["brainstorming", "writing-plans", "requirements", "user intent", "implementation plan", "需求", "规划"],
+    summary: "适合在开始实现前澄清目标、需求、方案和验收标准。",
+    triggerHints: ["开始做功能、组件、创意方案或行为修改之前"]
+  },
+  {
     category: "学术写作",
     keywords: ["paper", "academic", "citation", "review", "rebuttal", "论文", "文献"],
     summary: "适合论文写作、文献综述、引用检查、审稿意见分析和学术润色。",
@@ -28,7 +34,7 @@ const CATEGORY_RULES: CategoryRule[] = [
   },
   {
     category: "图像设计",
-    keywords: ["image", "design", "canva", "photo", "poster", "图像", "设计"],
+    keywords: ["image", "canva", "photo", "poster", "visual", "图像", "图片", "海报"],
     summary: "适合生成图片、处理设计稿、制作视觉素材或 Canva 内容。",
     triggerHints: ["需要图片、海报、设计稿或视觉素材时"]
   },
@@ -68,9 +74,7 @@ export function deriveSkillSummary(skill: SkillRecord, override: SkillOverride =
     .join(" ")
     .toLowerCase();
 
-  const rule = CATEGORY_RULES.find((candidate) =>
-    candidate.keywords.some((keyword) => classificationText.includes(keyword.toLowerCase()))
-  );
+  const rule = CATEGORY_RULES.find((candidate) => candidate.keywords.some((keyword) => keywordMatches(classificationText, keyword)));
   const sourceSignals = extractSourceSignals(skill, sourceDescription, rule);
 
   return {
@@ -88,6 +92,15 @@ function meaningfulPathText(value: string) {
     .split(/[\\/]/)
     .filter((part) => part && !["skills", "skill", "cache", "plugins", "plugin", "tmp"].includes(part.toLowerCase()))
     .join(" ");
+}
+
+function keywordMatches(text: string, keyword: string) {
+  const normalizedKeyword = keyword.toLowerCase();
+  if (/[\u4e00-\u9fff]/.test(normalizedKeyword)) {
+    return text.includes(normalizedKeyword);
+  }
+  const escaped = normalizedKeyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`).test(text);
 }
 
 function extractSourceSignals(skill: SkillRecord, description: string, rule: CategoryRule | undefined) {
@@ -201,6 +214,9 @@ function extractTriggerHints(text: string) {
   if (/browser|website|websites|click|typing|screenshot|网页|浏览器|点击|填写/.test(lower)) {
     hints.push("打开网页、点击、填写或检查页面时");
   }
+  if (/creative work|creating features|building components|adding functionality|modifying behavior|requirements and design/.test(lower)) {
+    hints.push("开始做功能、组件、创意方案或行为修改之前");
+  }
   if (/platform|渠道|平台/.test(lower)) {
     hints.push("当任务需要跨平台获取资料或选择合适渠道时");
   }
@@ -213,8 +229,11 @@ function chineseDescriptionSummary(description: string, skillName: string, categ
   if (!cleaned) {
     return "";
   }
+  if (/creative work|creating features|building components|adding functionality|modifying behavior|user intent|requirements and design/i.test(lower)) {
+    return "用于在创建功能、组件或修改行为之前澄清用户意图、需求和设计方案。";
+  }
   if (/must use when/i.test(cleaned)) {
-    return "用于处理该技能说明中指定的触发场景，可查看下方触发条件确认具体边界。";
+    return "用于处理该技能说明中指定的触发场景。";
   }
   if (/computer-use|local mac apps|operating app ui|clicking, typing, scrolling, dragging/i.test(lower)) {
     return "用于通过 Computer Use 操作本机 Mac 应用，适合点击、输入、滚动、拖拽、按键和设置界面值等任务。";
@@ -243,7 +262,7 @@ function chineseDescriptionSummary(description: string, skillName: string, categ
   if (/paper|citation|reviewer|manuscript|rebuttal/i.test(lower) && category === "学术写作") {
     return "用于论文写作、审稿反馈处理、引用检查和学术文本优化。";
   }
-  if (/image|photo|poster|canva|design/i.test(lower)) {
+  if (/image|photo|poster|canva|visual/i.test(lower)) {
     return "用于生成或编辑图像、设计稿和视觉素材，适合海报、照片、Canva 设计或视觉变体任务。";
   }
   if (containsChinese(cleaned)) {
