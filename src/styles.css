@@ -233,6 +233,35 @@ select {
   background: #5d557f;
 }
 
+.summary-panel {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1.3fr 1fr 0.7fr;
+  margin-bottom: 16px;
+}
+
+.summary-panel div {
+  background: #ffffff;
+  border: 1px solid #d9ded9;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.summary-panel h3 {
+  color: #40504a;
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+
+.summary-panel p,
+.summary-panel ul {
+  margin: 0;
+}
+
+.summary-panel ul {
+  padding-left: 18px;
+}
+
 .meta-grid {
   display: grid;
   gap: 10px;
@@ -264,7 +293,7 @@ select {
   align-items: end;
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(140px, 0.7fr) minmax(180px, 1fr) auto auto;
+  grid-template-columns: minmax(120px, 0.7fr) minmax(120px, 0.7fr) minmax(180px, 1fr) minmax(180px, 1fr) auto auto;
   margin-bottom: 16px;
 }
 
@@ -286,6 +315,10 @@ select {
 .checkbox-label input {
   min-height: auto;
   width: auto;
+}
+
+.wide-field {
+  min-width: 0;
 }
 
 .markdown-panel h3 {
@@ -329,7 +362,8 @@ select {
 }
 
 .path-list,
-.error-list {
+.error-list,
+.candidate-list {
   display: grid;
   gap: 8px;
   list-style: none;
@@ -348,6 +382,27 @@ select {
 .error-list strong,
 .error-list span {
   display: block;
+}
+
+.candidate-row {
+  align-items: flex-start !important;
+  background: #f4f5f2;
+  border-radius: 6px;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 8px !important;
+  padding: 8px;
+}
+
+.candidate-row input {
+  min-height: auto;
+  width: auto;
+}
+
+.candidate-row strong,
+.candidate-row small {
+  display: block;
+  overflow-wrap: anywhere;
 }
 
 .empty-state {
@@ -401,6 +456,10 @@ select {
   }
 
   .edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-panel {
     grid-template-columns: 1fr;
   }
 }

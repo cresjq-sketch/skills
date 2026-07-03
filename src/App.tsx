@@ -1,6 +1,12 @@
-import { Eye, EyeOff, FolderPlus, RefreshCw, Save, Search } from "lucide-react";
+import { Download, Eye, EyeOff, FolderPlus, RefreshCw, Save, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type { SkillConfig, SkillsApiResponse, SkillViewRecord } from "./shared/types";
+import type {
+  GitHubPreviewResponse,
+  GitHubSkillCandidate,
+  SkillConfig,
+  SkillsApiResponse,
+  SkillViewRecord
+} from "./shared/types";
 
 type SourceFilter = "all" | "codex" | "plugin" | "custom";
 
@@ -19,10 +25,15 @@ export default function App() {
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [showHidden, setShowHidden] = useState(false);
   const [status, setStatus] = useState("正在读取本机技能...");
+  const [displayName, setDisplayName] = useState("");
+  const [summary, setSummary] = useState("");
   const [note, setNote] = useState("");
   const [category, setCategory] = useState("");
   const [hidden, setHidden] = useState(false);
   const [importPath, setImportPath] = useState("");
+  const [githubInput, setGithubInput] = useState("");
+  const [githubPreview, setGithubPreview] = useState<GitHubPreviewResponse | null>(null);
+  const [selectedCandidateId, setSelectedCandidateId] = useState("");
 
   async function loadSkills(nextSelectedId = selectedId) {
     setStatus("正在刷新技能列表...");
@@ -46,6 +57,8 @@ export default function App() {
   const selectedSkill = skills.find((skill) => skill.id === selectedId);
 
   useEffect(() => {
+    setDisplayName(selectedSkill?.override.displayName ?? "");
+    setSummary(selectedSkill?.override.summary ?? "");
     setNote(selectedSkill?.override.note ?? "");
     setCategory(selectedSkill?.override.category ?? "");
     setHidden(Boolean(selectedSkill?.override.hidden));
@@ -87,8 +100,10 @@ export default function App() {
       body: JSON.stringify({
         overrides: {
           [selectedSkill.id]: {
+            displayName,
             note,
             category,
+            summary,
             hidden
           }
         }
@@ -128,6 +143,52 @@ export default function App() {
     }
     setConfig(body);
     setImportPath("");
+    await loadSkills(selectedId);
+  }
+
+  async function previewGitHubInstall() {
+    if (!githubInput.trim()) {
+      setStatus("请输入 GitHub 仓库地址");
+      return;
+    }
+    setStatus("正在预览 GitHub 技能...");
+    const response = await fetch("/api/import/github/preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input: githubInput.trim() })
+    });
+    const body = await response.json();
+    if (!response.ok) {
+      setStatus(body.message ?? "GitHub 预览失败");
+      return;
+    }
+    setGithubPreview(body);
+    setSelectedCandidateId(body.autoInstallCandidateId ?? body.candidates[0]?.id ?? "");
+    setStatus(`找到 ${body.candidates.length} 个可安装技能`);
+  }
+
+  async function installGitHubCandidate() {
+    if (!githubPreview || !selectedCandidateId) {
+      setStatus("请选择要安装的 GitHub 技能");
+      return;
+    }
+    setStatus("正在安装 GitHub 技能...");
+    const response = await fetch("/api/import/github/install", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clonePath: githubPreview.clonePath,
+        candidateId: selectedCandidateId
+      })
+    });
+    const body = await response.json();
+    if (!response.ok) {
+      setStatus(body.message ?? "GitHub 安装失败");
+      return;
+    }
+    setGithubInput("");
+    setGithubPreview(null);
+    setStatus(`已安装 ${body.installedSkillName}`);
     await loadSkills(selectedId);
   }
 
@@ -192,11 +253,11 @@ export default function App() {
                 className={skill.id === selectedId ? "skill-row selected" : "skill-row"}
                 onClick={() => setSelectedId(skill.id)}
               >
-                <span className="skill-title">{skill.name}</span>
-                <span className="skill-description">{skill.description || "无说明"}</span>
+                <span className="skill-title">{skill.summary.displayName}</span>
+                <span className="skill-description">{skill.summary.summary}</span>
                 <span className="skill-meta">
                   {sourceLabel(skill.sourceType)}
-                  {skill.override.category ? ` · ${skill.override.category}` : ""}
+                  {skill.summary.category ? ` · ${skill.summary.category}` : ""}
                   {skill.override.note ? " · 有备注" : ""}
                 </span>
               </button>
@@ -209,11 +270,30 @@ export default function App() {
             <>
               <header className="detail-header">
                 <div>
-                  <h2>{selectedSkill.name}</h2>
-                  <p>{selectedSkill.description || "这个技能没有写 description。"}</p>
+                  <h2>{selectedSkill.summary.displayName}</h2>
+                  <p>{selectedSkill.name}</p>
                 </div>
                 <span className={`source-pill ${selectedSkill.sourceType}`}>{sourceLabel(selectedSkill.sourceType)}</span>
               </header>
+
+              <section className="summary-panel">
+                <div>
+                  <h3>这个技能能做什么</h3>
+                  <p>{selectedSkill.summary.summary}</p>
+                </div>
+                <div>
+                  <h3>什么时候会用到</h3>
+                  <ul>
+                    {selectedSkill.summary.triggerHints.map((hint) => (
+                      <li key={hint}>{hint}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h3>中文分类</h3>
+                  <p>{selectedSkill.summary.category}</p>
+                </div>
+              </section>
 
               <dl className="meta-grid">
                 <div>
@@ -228,8 +308,16 @@ export default function App() {
 
               <div className="edit-grid">
                 <label>
+                  中文名称
+                  <input aria-label="中文名称" value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder={selectedSkill.name} />
+                </label>
+                <label>
                   分类
                   <input value={category} onChange={(event) => setCategory(event.target.value)} placeholder="例如：研究、写作、浏览器" />
+                </label>
+                <label className="wide-field">
+                  中文摘要
+                  <input aria-label="中文摘要" value={summary} onChange={(event) => setSummary(event.target.value)} placeholder={selectedSkill.summary.summary} />
                 </label>
                 <label>
                   备注
@@ -246,7 +334,7 @@ export default function App() {
               </div>
 
               <section className="markdown-panel">
-                <h3>SKILL.md</h3>
+                <h3>原始 SKILL.md</h3>
                 <pre>{selectedSkill.markdown}</pre>
               </section>
             </>
@@ -267,6 +355,46 @@ export default function App() {
               <FolderPlus size={16} />
               添加目录
             </button>
+          </section>
+
+          <section>
+            <h2>GitHub 安装</h2>
+            <p>支持公开仓库地址、owner/repo，或指向具体技能目录的 tree 链接。</p>
+            <label>
+              GitHub 仓库
+              <input
+                aria-label="GitHub 仓库"
+                value={githubInput}
+                onChange={(event) => setGithubInput(event.target.value)}
+                placeholder="owner/repo 或 https://github.com/owner/repo"
+              />
+            </label>
+            <button type="button" onClick={previewGitHubInstall}>
+              <Search size={16} />
+              预览 GitHub 技能
+            </button>
+            {githubPreview ? (
+              <div className="candidate-list">
+                {githubPreview.candidates.map((candidate: GitHubSkillCandidate) => (
+                  <label key={candidate.id} className="candidate-row">
+                    <input
+                      type="radio"
+                      name="github-candidate"
+                      checked={selectedCandidateId === candidate.id}
+                      onChange={() => setSelectedCandidateId(candidate.id)}
+                    />
+                    <span>
+                      <strong>{candidate.name}</strong>
+                      <small>{candidate.relativePath}</small>
+                    </span>
+                  </label>
+                ))}
+                <button type="button" onClick={installGitHubCandidate}>
+                  <Download size={16} />
+                  安装选中技能
+                </button>
+              </div>
+            ) : null}
           </section>
 
           <section>
