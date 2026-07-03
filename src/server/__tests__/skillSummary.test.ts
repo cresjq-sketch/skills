@@ -67,17 +67,20 @@ description: MUST USE when user wants to 调研/research/搜索/search/查/找/l
 
 15 平台、多后端。
 
-NOT for: 写报告/数据分析/翻译等内容加工；发帖/评论/点赞等写操作。
+NOT for: 写报告/数据分析/翻译等内容加工；
+发帖/评论/点赞等写操作。
 `;
 
     const summary = deriveSkillSummary(skillWith("agent-reach", markdown));
 
     expect(summary.summary).toContain("互联网");
     expect(summary.summary).toContain("多平台");
+    expect(summary.category).toBe("搜索调研");
     expect(summary.triggerHints.join(" ")).toContain("搜索");
     expect(summary.triggerHints.join(" ")).toContain("调研");
     expect(summary.boundaries.join(" ")).toContain("发帖");
     expect(summary.boundaries.join(" ")).toContain("评论");
+    expect(summary.boundaries.join(" ")).toContain("点赞");
   });
 
   test("keeps category fallback for sparse skills while adding empty boundaries", () => {

@@ -43,12 +43,31 @@ const beta = {
   }
 };
 
+const legacySkill = {
+  ...alpha,
+  id: "legacy-id",
+  name: "legacy",
+  summary: {
+    displayName: "legacy",
+    category: "通用技能",
+    summary: "旧数据",
+    triggerHints: ["旧触发"]
+  }
+};
+
 function mockFetch() {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     if (url === "/api/skills") {
       return jsonResponse({
         skills: [alpha, beta],
+        errors: [],
+        config: { extraScanPaths: [], overrides: {}, customEntries: [] }
+      });
+    }
+    if (url === "/api/legacy-skills") {
+      return jsonResponse({
+        skills: [legacySkill],
         errors: [],
         config: { extraScanPaths: [], overrides: {}, customEntries: [] }
       });
@@ -219,5 +238,24 @@ describe("App", () => {
     await userEvent.click(screen.getByRole("button", { name: /刷新/ }));
 
     expect(fetchMock.mock.calls.filter(([url]) => url === "/api/skills")).toHaveLength(2);
+  });
+
+  test("handles legacy summaries without boundaries", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        jsonResponse({
+          skills: [legacySkill],
+          errors: [],
+          config: { extraScanPaths: [], overrides: {}, customEntries: [] }
+        })
+      )
+    );
+
+    render(<App />);
+
+    const detail = within(await screen.findByLabelText("技能详情"));
+    expect(detail.getByRole("heading", { name: "legacy" })).toBeInTheDocument();
+    expect(detail.getByText("旧数据")).toBeInTheDocument();
   });
 });

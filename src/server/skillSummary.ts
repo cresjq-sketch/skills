@@ -76,7 +76,7 @@ export function deriveSkillSummary(skill: SkillRecord, override: SkillOverride =
 
   return {
     displayName: override.displayName || skill.name,
-    category: override.category || rule?.category || "通用技能",
+    category: override.category || sourceSignals.category || rule?.category || "通用技能",
     summary: override.summary || sourceSignals.summary || rule?.summary || "查看原文了解这个技能的具体用途。",
     triggerHints: sourceSignals.triggerHints.length
       ? sourceSignals.triggerHints
@@ -97,10 +97,10 @@ function extractSourceSignals(skill: SkillRecord) {
   const lower = markdown.toLowerCase();
   const description = skill.description || skill.metadata.description || "";
   const triggerLine = findLine(markdown, ["must use when", "use when", "triggers"]);
-  const boundaryLine = findLine(markdown, ["not for", "do not", "don't"]);
+  const boundaryText = findSectionText(markdown, ["not for", "do not", "don't"]);
   const platformLabels = detectPlatforms(markdown);
   const triggerHints = extractTriggerHints(triggerLine || (containsChinese(description) ? description : ""));
-  const boundaries = extractBoundaries(boundaryLine);
+  const boundaries = extractBoundaries(boundaryText);
 
   const isInternetRouter =
     lower.includes("agent reach") ||
@@ -112,14 +112,17 @@ function extractSourceSignals(skill: SkillRecord) {
     platformLabels.length >= 3;
 
   let summary = "";
+  let category = "";
   if (isInternetRouter) {
     const platformText = platformLabels.length ? `，覆盖 ${platformLabels.join("、")} 等渠道` : "";
     summary = `用于从互联网和多平台获取内容${platformText}，适合搜索、调研、查找资料和读取链接。`;
+    category = "搜索调研";
   } else if (description.length >= 80 || containsChinese(description)) {
     summary = chineseDescriptionSummary(description);
   }
 
   return {
+    category,
     summary,
     triggerHints,
     boundaries
@@ -131,6 +134,28 @@ function findLine(markdown: string, needles: string[]) {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .find((line) => needles.some((needle) => line.toLowerCase().includes(needle)));
+}
+
+function findSectionText(markdown: string, needles: string[]) {
+  const lines = markdown.split(/\r?\n/);
+  const startIndex = lines.findIndex((line) => needles.some((needle) => line.toLowerCase().includes(needle)));
+  if (startIndex === -1) {
+    return "";
+  }
+  const section: string[] = [];
+  for (let index = startIndex; index < lines.length; index += 1) {
+    const line = lines[index].trim();
+    if (!line && section.length) {
+      break;
+    }
+    if (section.length && (/^#{1,6}\s/.test(line) || line === "---")) {
+      break;
+    }
+    if (line) {
+      section.push(line);
+    }
+  }
+  return section.join(" ");
 }
 
 function detectPlatforms(text: string) {
@@ -165,11 +190,11 @@ function extractTriggerHints(text: string) {
   return hints.length ? hints : [cleanSentence(text)];
 }
 
-function extractBoundaries(line: string | undefined) {
-  if (!line) {
+function extractBoundaries(text: string | undefined) {
+  if (!text) {
     return [];
   }
-  const cleaned = cleanSentence(line.replace(/^[-*\s]*/, "").replace(/^not for\s*:\s*/i, ""));
+  const cleaned = cleanSentence(text.replace(/^[-*\s]*/, "").replace(/^not for\s*:\s*/i, ""));
   if (!cleaned) {
     return [];
   }
