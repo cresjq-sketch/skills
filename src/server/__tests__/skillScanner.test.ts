@@ -23,6 +23,20 @@ describe("parseSkillMarkdown", () => {
     expect(parsed.body.trim()).toBe("# Body");
   });
 
+  test("parses folded yaml descriptions", () => {
+    const parsed = parseSkillMarkdown(`---
+name: demo
+description: >
+  First line
+  second line
+triggers:
+  - demo
+---
+# Body`);
+
+    expect(parsed.metadata.description).toBe("First line second line");
+  });
+
   test("handles markdown without frontmatter", () => {
     const parsed = parseSkillMarkdown("# Plain skill");
 

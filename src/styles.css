@@ -210,15 +210,28 @@ select {
 }
 
 .detail-header p {
+  align-items: center;
   color: #5d6864;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.source-pill {
+.source-pill,
+.inline-pill {
   border-radius: 999px;
-  color: #fff;
   flex: 0 0 auto;
   font-size: 13px;
   padding: 5px 10px;
+}
+
+.source-pill {
+  color: #fff;
+}
+
+.inline-pill {
+  background: #e7ece8;
+  color: #33433d;
 }
 
 .source-pill.codex {
@@ -236,7 +249,7 @@ select {
 .summary-panel {
   display: grid;
   gap: 10px;
-  grid-template-columns: 1.3fr 1fr 0.7fr;
+  grid-template-columns: 1.3fr 1fr;
   margin-bottom: 16px;
 }
 

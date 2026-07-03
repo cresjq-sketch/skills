@@ -22,7 +22,7 @@ const CATEGORY_RULES: CategoryRule[] = [
   },
   {
     category: "代码协作",
-    keywords: ["git", "github", "code", "repo", "repository", "pull request", "commit"],
+    keywords: ["git", "github", "codebase", "repo", "repository", "pull request", "commit", "代码", "仓库"],
     summary: "适合代码仓库、GitHub、分支、提交、PR 和代码协作相关任务。",
     triggerHints: ["需要查看仓库、提交代码、处理 PR 或 GitHub 内容时"]
   },
@@ -59,20 +59,19 @@ const CATEGORY_RULES: CategoryRule[] = [
 ];
 
 export function deriveSkillSummary(skill: SkillRecord, override: SkillOverride = {}): SkillSummary {
-  const text = [
+  const sourceDescription = sourceDescriptionFor(skill);
+  const classificationText = [
     skill.name,
-    skill.description,
+    sourceDescription,
     meaningfulPathText(skill.skillDir),
-    Object.values(skill.metadata).join(" "),
-    skill.markdown
   ]
     .join(" ")
     .toLowerCase();
 
   const rule = CATEGORY_RULES.find((candidate) =>
-    candidate.keywords.some((keyword) => text.includes(keyword.toLowerCase()))
+    candidate.keywords.some((keyword) => classificationText.includes(keyword.toLowerCase()))
   );
-  const sourceSignals = extractSourceSignals(skill);
+  const sourceSignals = extractSourceSignals(skill, sourceDescription, rule);
 
   return {
     displayName: override.displayName || skill.name,
@@ -80,8 +79,7 @@ export function deriveSkillSummary(skill: SkillRecord, override: SkillOverride =
     summary: override.summary || sourceSignals.summary || rule?.summary || "查看原文了解这个技能的具体用途。",
     triggerHints: sourceSignals.triggerHints.length
       ? sourceSignals.triggerHints
-      : rule?.triggerHints ?? ["不确定时可打开原文查看触发条件和使用边界"],
-    boundaries: sourceSignals.boundaries
+      : rule?.triggerHints ?? ["不确定时可打开原文查看触发条件和使用边界"]
   };
 }
 
@@ -92,15 +90,12 @@ function meaningfulPathText(value: string) {
     .join(" ");
 }
 
-function extractSourceSignals(skill: SkillRecord) {
-  const markdown = skill.markdown;
-  const lower = markdown.toLowerCase();
-  const description = skill.description || skill.metadata.description || "";
-  const triggerLine = findLine(markdown, ["must use when", "use when", "triggers"]);
-  const boundaryText = findSectionText(markdown, ["not for", "do not", "don't"]);
-  const platformLabels = detectPlatforms(markdown);
-  const triggerHints = extractTriggerHints(triggerLine || (containsChinese(description) ? description : ""));
-  const boundaries = extractBoundaries(boundaryText);
+function extractSourceSignals(skill: SkillRecord, description: string, rule: CategoryRule | undefined) {
+  const sourceText = [skill.name, description, meaningfulPathText(skill.skillDir)].join(" ");
+  const lower = sourceText.toLowerCase();
+  const triggerLine = findLine(skill.markdown, ["must use when", "use when", "triggers"]);
+  const platformLabels = detectPlatforms(sourceText);
+  const triggerHints = extractTriggerHints(triggerLine || description);
 
   const isInternetRouter =
     lower.includes("agent reach") ||
@@ -117,16 +112,57 @@ function extractSourceSignals(skill: SkillRecord) {
     const platformText = platformLabels.length ? `，覆盖 ${platformLabels.join("、")} 等渠道` : "";
     summary = `用于从互联网和多平台获取内容${platformText}，适合搜索、调研、查找资料和读取链接。`;
     category = "搜索调研";
-  } else if (description.length >= 80 || containsChinese(description)) {
-    summary = chineseDescriptionSummary(description);
+  } else {
+    summary = chineseDescriptionSummary(description, skill.name, rule?.category);
   }
 
   return {
     category,
     summary,
-    triggerHints,
-    boundaries
+    triggerHints
   };
+}
+
+function sourceDescriptionFor(skill: SkillRecord) {
+  const metadataDescription = skill.metadata.description?.trim();
+  if (metadataDescription && ![">", "|"].includes(metadataDescription) && metadataDescription !== skill.markdown.trim()) {
+    return metadataDescription;
+  }
+  const frontmatterDescription = parseFrontmatterDescription(skill.markdown);
+  if (frontmatterDescription) {
+    return frontmatterDescription;
+  }
+  return skill.description.trim();
+}
+
+function parseFrontmatterDescription(markdown: string) {
+  if (!markdown.startsWith("---\n")) {
+    return "";
+  }
+  const endIndex = markdown.indexOf("\n---", 4);
+  if (endIndex === -1) {
+    return "";
+  }
+  const lines = markdown.slice(4, endIndex).split(/\r?\n/);
+  const descriptionIndex = lines.findIndex((line) => line.trimStart().toLowerCase().startsWith("description:"));
+  if (descriptionIndex === -1) {
+    return "";
+  }
+  const rawValue = lines[descriptionIndex].split(":").slice(1).join(":").trim();
+  if (rawValue === ">" || rawValue === "|") {
+    const block: string[] = [];
+    for (let index = descriptionIndex + 1; index < lines.length; index += 1) {
+      const line = lines[index];
+      if (line.trim() && !/^\s/.test(line)) {
+        break;
+      }
+      if (line.trim()) {
+        block.push(line.trim());
+      }
+    }
+    return block.join(" ").replace(/\s+/g, " ").trim();
+  }
+  return rawValue.replace(/^["']|["']$/g, "").trim();
 }
 
 function findLine(markdown: string, needles: string[]) {
@@ -134,28 +170,6 @@ function findLine(markdown: string, needles: string[]) {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .find((line) => needles.some((needle) => line.toLowerCase().includes(needle)));
-}
-
-function findSectionText(markdown: string, needles: string[]) {
-  const lines = markdown.split(/\r?\n/);
-  const startIndex = lines.findIndex((line) => needles.some((needle) => line.toLowerCase().includes(needle)));
-  if (startIndex === -1) {
-    return "";
-  }
-  const section: string[] = [];
-  for (let index = startIndex; index < lines.length; index += 1) {
-    const line = lines[index].trim();
-    if (!line && section.length) {
-      break;
-    }
-    if (section.length && (/^#{1,6}\s/.test(line) || line === "---")) {
-      break;
-    }
-    if (line) {
-      section.push(line);
-    }
-  }
-  return section.join(" ");
 }
 
 function detectPlatforms(text: string) {
@@ -184,33 +198,58 @@ function extractTriggerHints(text: string) {
   if (/url|链接|github|小红书|reddit|youtube|bilibili|twitter|x\.com/.test(lower)) {
     hints.push("当用户提供网页链接、GitHub、社交平台、视频或播客地址时");
   }
+  if (/browser|website|websites|click|typing|screenshot|网页|浏览器|点击|填写/.test(lower)) {
+    hints.push("打开网页、点击、填写或检查页面时");
+  }
   if (/platform|渠道|平台/.test(lower)) {
     hints.push("当任务需要跨平台获取资料或选择合适渠道时");
   }
   return hints.length ? hints : [cleanSentence(text)];
 }
 
-function extractBoundaries(text: string | undefined) {
-  if (!text) {
-    return [];
-  }
-  const cleaned = cleanSentence(text.replace(/^[-*\s]*/, "").replace(/^not for\s*:\s*/i, ""));
-  if (!cleaned) {
-    return [];
-  }
-  const boundaries = [cleaned];
-  if (/发帖|评论|点赞|publish|comment|like/i.test(cleaned)) {
-    boundaries.unshift("只负责获取和整理内容，不负责发帖、评论、点赞等写操作。");
-  }
-  return Array.from(new Set(boundaries));
-}
-
-function chineseDescriptionSummary(description: string) {
+function chineseDescriptionSummary(description: string, skillName: string, category?: string) {
   const cleaned = cleanSentence(description);
+  const lower = `${skillName} ${cleaned}`.toLowerCase();
+  if (!cleaned) {
+    return "";
+  }
   if (/must use when/i.test(cleaned)) {
     return "用于处理该技能说明中指定的触发场景，可查看下方触发条件确认具体边界。";
   }
-  return cleaned.length > 90 ? `${cleaned.slice(0, 88)}...` : cleaned;
+  if (/computer-use|local mac apps|operating app ui|clicking, typing, scrolling, dragging/i.test(lower)) {
+    return "用于通过 Computer Use 操作本机 Mac 应用，适合点击、输入、滚动、拖拽、按键和设置界面值等任务。";
+  }
+  if (/control-in-app-browser|in-app browser|localhost|127\.0\.0\.1|file:\/\/|screenshot/i.test(lower)) {
+    return "用于控制 Codex 内置浏览器，适合打开、导航、检查、测试、点击、输入、截图或验证本地网页和本地应用。";
+  }
+  if (/control-chrome|chrome browser|chrome/i.test(lower)) {
+    return "用于控制本机 Chrome 浏览器，适合处理依赖现有登录状态、标签页或扩展的网页操作。";
+  }
+  if (/\.docx|word|google docs|document artifacts|redline/i.test(lower)) {
+    return "用于创建、编辑、批注和检查 Word/DOCX 或 Google Docs 目标文档，并通过渲染预览确认排版。";
+  }
+  if (/pdf/i.test(lower) && category === "文档办公") {
+    return "用于读取、创建、检查和渲染 PDF 文件，适合需要确认版面、提取内容或生成 PDF 的任务。";
+  }
+  if (/spreadsheet|excel|csv|xlsx|google sheets/i.test(lower)) {
+    return "用于创建、修改、分析和检查表格文件，适合处理 Excel、CSV、TSV 或 Google Sheets 目标表格。";
+  }
+  if (/presentation|slides|powerpoint|google slides/i.test(lower)) {
+    return "用于创建或编辑演示文稿，适合处理 PowerPoint 或 Google Slides 目标幻灯片。";
+  }
+  if (/academic research|deep research|literature review|systematic review|fact-check/i.test(lower)) {
+    return "用于严谨学术调研和文献分析，适合深度研究、文献综述、事实核查、系统综述和研究问题梳理。";
+  }
+  if (/paper|citation|reviewer|manuscript|rebuttal/i.test(lower) && category === "学术写作") {
+    return "用于论文写作、审稿反馈处理、引用检查和学术文本优化。";
+  }
+  if (/image|photo|poster|canva|design/i.test(lower)) {
+    return "用于生成或编辑图像、设计稿和视觉素材，适合海报、照片、Canva 设计或视觉变体任务。";
+  }
+  if (containsChinese(cleaned)) {
+    return cleaned.length > 90 ? `${cleaned.slice(0, 88)}...` : cleaned;
+  }
+  return "";
 }
 
 function cleanSentence(value: string) {

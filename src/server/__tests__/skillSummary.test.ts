@@ -37,6 +37,52 @@ describe("deriveSkillSummary", () => {
     expect(summary.triggerHints).toContain("打开网页、点击、填写或检查页面时");
   });
 
+  test("classifies computer-use from its own description instead of policy body", () => {
+    const markdown = `---
+name: computer-use
+description: Control local Mac apps through Computer Use. Use for tasks that require reading or operating app UI by clicking, typing, scrolling, dragging, pressing keys, or setting values.
+---
+# Computer Use
+
+Because Computer Use and Browser Use MCPs can trigger external side effects through live UI actions, follow the below policy.
+
+## Internet permissions
+`;
+
+    const summary = deriveSkillSummary(skillWith("computer-use", markdown));
+
+    expect(summary.category).toBe("浏览器/电脑控制");
+    expect(summary.summary).toBe("用于通过 Computer Use 操作本机 Mac 应用，适合点击、输入、滚动、拖拽、按键和设置界面值等任务。");
+    expect(summary.summary).not.toContain("互联网");
+    expect(summary.summary).not.toContain("搜索");
+  });
+
+  test("does not classify plugin skills as code collaboration because of the .codex path", () => {
+    const skill = {
+      ...skillWith("computer-use", "Control local Mac apps through Computer Use."),
+      skillDir: "/Users/demo/.codex/plugins/cache/openai-bundled/computer-use/skills/computer-use"
+    };
+
+    const summary = deriveSkillSummary(skill);
+
+    expect(summary.category).toBe("浏览器/电脑控制");
+  });
+
+  test("summarizes document skills from the skill description", () => {
+    const markdown = `---
+name: documents
+description: Create, edit, redline, and comment on .docx, Word, and Google Docs-targeted document artifacts inside the container, with a strict render-and-verify workflow.
+---
+# Documents Skill
+`;
+
+    const summary = deriveSkillSummary(skillWith("documents", markdown));
+
+    expect(summary.category).toBe("文档办公");
+    expect(summary.summary).toContain("Word/DOCX");
+    expect(summary.summary).toContain("渲染预览");
+  });
+
   test("falls back for unknown skills", () => {
     const summary = deriveSkillSummary(skillWith("unknown", ""));
 
@@ -78,15 +124,33 @@ NOT for: 写报告/数据分析/翻译等内容加工；
     expect(summary.category).toBe("搜索调研");
     expect(summary.triggerHints.join(" ")).toContain("搜索");
     expect(summary.triggerHints.join(" ")).toContain("调研");
-    expect(summary.boundaries.join(" ")).toContain("发帖");
-    expect(summary.boundaries.join(" ")).toContain("评论");
-    expect(summary.boundaries.join(" ")).toContain("点赞");
+    expect(summary).not.toHaveProperty("boundaries");
   });
 
-  test("keeps category fallback for sparse skills while adding empty boundaries", () => {
+  test("reads folded yaml descriptions when generating summaries", () => {
+    const markdown = `---
+name: agent-reach
+description: >
+  MUST USE when user wants to 调研/research/搜索/search/查/找/look up anything
+  on the internet.
+
+  Also MUST USE when user mentions 小红书, Reddit, YouTube, GitHub code search,
+  RSS feeds, or any web URL.
+---
+# Agent Reach
+`;
+
+    const summary = deriveSkillSummary(skillWith("agent-reach", markdown));
+
+    expect(summary.category).toBe("搜索调研");
+    expect(summary.summary).toContain("互联网");
+    expect(summary.summary).toContain("小红书");
+    expect(summary.summary).not.toBe("适合代码仓库、GitHub、分支、提交、PR 和代码协作相关任务。");
+  });
+
+  test("keeps category fallback for sparse skills", () => {
     const summary = deriveSkillSummary(skillWith("github-helper", "github repo commit"));
 
     expect(summary.category).toBe("代码协作");
-    expect(summary.boundaries).toEqual([]);
   });
 });

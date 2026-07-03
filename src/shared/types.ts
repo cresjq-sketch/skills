@@ -51,7 +51,6 @@ export interface SkillSummary {
   category: string;
   summary: string;
   triggerHints: string[];
-  boundaries: string[];
 }
 
 export interface CustomSkillEntry {

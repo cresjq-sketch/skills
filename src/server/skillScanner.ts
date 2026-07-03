@@ -31,13 +31,29 @@ export function parseSkillMarkdown(markdown: string): ParsedSkillMarkdown {
   const body = markdown.slice(endIndex + 4).replace(/^\n/, "");
   const metadata: Record<string, string> = {};
 
-  for (const line of frontmatter.split("\n")) {
+  const lines = frontmatter.split("\n");
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
     const separatorIndex = line.indexOf(":");
     if (separatorIndex === -1) {
       continue;
     }
     const key = line.slice(0, separatorIndex).trim();
-    const value = line.slice(separatorIndex + 1).trim().replace(/^["']|["']$/g, "");
+    let value = line.slice(separatorIndex + 1).trim().replace(/^["']|["']$/g, "");
+    if (value === ">" || value === "|") {
+      const block: string[] = [];
+      for (let blockIndex = index + 1; blockIndex < lines.length; blockIndex += 1) {
+        const blockLine = lines[blockIndex];
+        if (blockLine.trim() && !/^\s/.test(blockLine)) {
+          break;
+        }
+        if (blockLine.trim()) {
+          block.push(blockLine.trim());
+        }
+        index = blockIndex;
+      }
+      value = block.join(" ").replace(/\s+/g, " ").trim();
+    }
     if (key) {
       metadata[key] = value;
     }

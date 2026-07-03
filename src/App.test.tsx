@@ -18,8 +18,7 @@ const alpha = {
     displayName: "alpha",
     category: "搜索调研",
     summary: "适合收集资料、搜索网页、整理外部信息和做主题调研。",
-    triggerHints: ["需要查资料、看网页、整理外部信息时"],
-    boundaries: []
+    triggerHints: ["需要查资料、看网页、整理外部信息时"]
   }
 };
 
@@ -38,8 +37,7 @@ const beta = {
     displayName: "beta",
     category: "Research",
     summary: "适合处理插件技能。",
-    triggerHints: ["需要管理技能时"],
-    boundaries: ["不负责发布内容"]
+    triggerHints: ["需要管理技能时"]
   }
 };
 
@@ -145,8 +143,9 @@ describe("App", () => {
     const detail = within(await screen.findByLabelText("技能详情"));
     expect(await screen.findByText("这个技能能做什么")).toBeInTheDocument();
     expect(detail.getByText("适合处理插件技能。")).toBeInTheDocument();
-    expect(detail.getByText("使用边界")).toBeInTheDocument();
-    expect(detail.getByText("不负责发布内容")).toBeInTheDocument();
+    expect(detail.getByText("Research")).toBeInTheDocument();
+    expect(detail.queryByText("中文分类")).not.toBeInTheDocument();
+    expect(detail.queryByText("使用边界")).not.toBeInTheDocument();
     expect(detail.getByText(/# Beta body/)).toBeInTheDocument();
     expect(screen.getByDisplayValue("Existing note")).toBeInTheDocument();
   });
@@ -240,7 +239,7 @@ describe("App", () => {
     expect(fetchMock.mock.calls.filter(([url]) => url === "/api/skills")).toHaveLength(2);
   });
 
-  test("handles legacy summaries without boundaries", async () => {
+  test("handles legacy summaries without optional fields", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () =>
