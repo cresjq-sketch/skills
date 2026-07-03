@@ -293,6 +293,16 @@ export default function App() {
                   <h3>中文分类</h3>
                   <p>{selectedSkill.summary.category}</p>
                 </div>
+                {selectedSkill.summary.boundaries.length ? (
+                  <div>
+                    <h3>使用边界</h3>
+                    <ul>
+                      {selectedSkill.summary.boundaries.map((boundary) => (
+                        <li key={boundary}>{boundary}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </section>
 
               <dl className="meta-grid">

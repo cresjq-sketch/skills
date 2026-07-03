@@ -126,6 +126,8 @@ describe("App", () => {
     const detail = within(await screen.findByLabelText("技能详情"));
     expect(await screen.findByText("这个技能能做什么")).toBeInTheDocument();
     expect(detail.getByText("适合处理插件技能。")).toBeInTheDocument();
+    expect(detail.getByText("使用边界")).toBeInTheDocument();
+    expect(detail.getByText("不负责发布内容")).toBeInTheDocument();
     expect(detail.getByText(/# Beta body/)).toBeInTheDocument();
     expect(screen.getByDisplayValue("Existing note")).toBeInTheDocument();
   });
