@@ -24,6 +24,12 @@ describe("deriveSkillSummary", () => {
     expect(summary.summary).toContain("论文");
   });
 
+  test("prioritizes academic keywords over incidental browser keywords", () => {
+    const summary = deriveSkillSummary(skillWith("academic-paper", "write paper citation review browser"));
+
+    expect(summary.category).toBe("学术写作");
+  });
+
   test("maps browser keywords to Chinese computer control category", () => {
     const summary = deriveSkillSummary(skillWith("browser", "open websites and click"));
 

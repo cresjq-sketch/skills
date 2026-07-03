@@ -9,18 +9,6 @@ interface CategoryRule {
 
 const CATEGORY_RULES: CategoryRule[] = [
   {
-    category: "浏览器/电脑控制",
-    keywords: ["chrome", "browser", "computer", "click", "website", "websites", "网页", "浏览器"],
-    summary: "适合打开网页、点击页面、填写表单、检查网页状态或操作本机应用。",
-    triggerHints: ["打开网页、点击、填写或检查页面时"]
-  },
-  {
-    category: "搜索调研",
-    keywords: ["research", "search", "crawl", "scrape", "调研", "搜索"],
-    summary: "适合收集资料、搜索网页、整理外部信息和做主题调研。",
-    triggerHints: ["需要查资料、看网页、整理外部信息时"]
-  },
-  {
     category: "学术写作",
     keywords: ["paper", "academic", "citation", "review", "rebuttal", "论文", "文献"],
     summary: "适合论文写作、文献综述、引用检查、审稿意见分析和学术润色。",
@@ -49,6 +37,18 @@ const CATEGORY_RULES: CategoryRule[] = [
     keywords: ["automation", "reminder", "monitor", "schedule", "自动化", "提醒"],
     summary: "适合创建提醒、监控、定时任务和重复工作流。",
     triggerHints: ["需要定时提醒、持续监控或自动执行任务时"]
+  },
+  {
+    category: "搜索调研",
+    keywords: ["research", "search", "crawl", "scrape", "调研", "搜索"],
+    summary: "适合收集资料、搜索网页、整理外部信息和做主题调研。",
+    triggerHints: ["需要查资料、看网页、整理外部信息时"]
+  },
+  {
+    category: "浏览器/电脑控制",
+    keywords: ["chrome", "browser", "computer", "click", "website", "websites", "网页", "浏览器"],
+    summary: "适合打开网页、点击页面、填写表单、检查网页状态或操作本机应用。",
+    triggerHints: ["打开网页、点击、填写或检查页面时"]
   },
   {
     category: "技能/插件管理",
